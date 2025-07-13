@@ -33,7 +33,7 @@
 ```bash
 # Clone this enhanced fork
 git clone https://github.com/nqmn/cicflowmeter
-cd cicflowmeter-icmp
+cd cicflowmeter
 
 # Install dependencies
 pip install -e .
