@@ -37,12 +37,17 @@
 git clone https://github.com/nqmn/cicflowmeter
 cd cicflowmeter
 
-# Install dependencies
-pip install -e .
+# Create virtual environment
+python3 -m venv venv
 
-# Or using uv (if available)
-uv sync
-source .venv/bin/activate
+# Activate it
+source venv/bin/activate
+
+# Upgrade pip and install the package
+pip install --upgrade pip
+
+# Install using pyproject.toml (if supported)
+pip install .
 ```
 
 ### Option 2: Direct Installation
