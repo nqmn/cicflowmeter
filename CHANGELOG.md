@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.4.2-ma] - 2025-07-13
+## [0.4.2+ma] - 2025-07-13
 ### Added
 - **Version Command**: Added `--version` command line option to display version information
 - **Enhanced Help**: Improved command line help with detailed descriptions, examples, and better formatting

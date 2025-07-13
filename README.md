@@ -20,7 +20,7 @@
 
 ---
 
-## ⚡️ Version 0.4.2-ma
+## ⚡️ Version 0.4.2+ma
 
 - **NEW**: Enhanced with ICMP support while maintaining the original 82 features for full compatibility.
 - **NEW**: Added `--version` command line option to display version information.
