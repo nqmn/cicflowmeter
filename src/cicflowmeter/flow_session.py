@@ -3,7 +3,7 @@ from scapy.sessions import DefaultSession
 
 from cicflowmeter.writer import output_writer_factory
 
-from .constants import EXPIRED_UPDATE, PACKETS_PER_GC
+from .constants import EXPIRED_UPDATE, ICMP_EXPIRED_UPDATE, PACKETS_PER_GC
 from .features.context import PacketDirection, get_packet_flow_key
 from .flow import Flow
 from .utils import get_logger
@@ -42,7 +42,7 @@ class FlowSession(DefaultSession):
         count = 0
         direction = PacketDirection.FORWARD
 
-        if "TCP" not in pkt and "UDP" not in pkt:
+        if "TCP" not in pkt and "UDP" not in pkt and "ICMP" not in pkt:
             return None  # Do not return the packet, prevents Scapy from printing
 
         try:
@@ -68,24 +68,28 @@ class FlowSession(DefaultSession):
             packet_flow_key = get_packet_flow_key(pkt, direction)
             self.flows[(packet_flow_key, count)] = flow
 
-        elif (pkt.time - flow.latest_timestamp) > EXPIRED_UPDATE:
-            # If the packet exists in the flow but the packet is sent
-            # after too much of a delay than it is a part of a new flow.
-            expired = EXPIRED_UPDATE
-            while (pkt.time - flow.latest_timestamp) > expired:
-                count += 1
-                expired += EXPIRED_UPDATE
-                flow = self.flows.get((packet_flow_key, count))
+        else:
+            # Determine timeout based on protocol
+            timeout = ICMP_EXPIRED_UPDATE if "ICMP" in pkt else EXPIRED_UPDATE
 
-                if flow is None:
-                    flow = Flow(pkt, direction)
-                    self.flows[(packet_flow_key, count)] = flow
-                    break
-        elif "F" in pkt.flags:
-            # If it has FIN flag then early collect flow and continue
-            flow.add_packet(pkt, direction)
-            self.garbage_collect(pkt.time)
-            return None  # Return None to indicate processing is incomplete
+            if (pkt.time - flow.latest_timestamp) > timeout:
+                # If the packet exists in the flow but the packet is sent
+                # after too much of a delay than it is a part of a new flow.
+                expired = timeout
+                while (pkt.time - flow.latest_timestamp) > expired:
+                    count += 1
+                    expired += timeout
+                    flow = self.flows.get((packet_flow_key, count))
+
+                    if flow is None:
+                        flow = Flow(pkt, direction)
+                        self.flows[(packet_flow_key, count)] = flow
+                        break
+            elif "TCP" in pkt and "F" in pkt.flags:
+                # If it has FIN flag then early collect flow and continue (TCP only)
+                flow.add_packet(pkt, direction)
+                self.garbage_collect(pkt.time)
+                return None  # Return None to indicate processing is incomplete
 
         flow.add_packet(pkt, direction)
 
@@ -102,10 +106,17 @@ class FlowSession(DefaultSession):
         for k in list(self.flows.keys()):
             flow = self.flows.get(k)
 
-            if not flow or (
+            if not flow:
+                continue
+
+            # Use different timeouts for ICMP vs TCP/UDP flows
+            timeout = ICMP_EXPIRED_UPDATE if flow.is_icmp else EXPIRED_UPDATE
+            duration_threshold = 30 if flow.is_icmp else 90  # Shorter duration for ICMP
+
+            if (
                 latest_time is not None
-                and latest_time - flow.latest_timestamp < EXPIRED_UPDATE
-                and flow.duration < 90
+                and latest_time - flow.latest_timestamp < timeout
+                and flow.duration < duration_threshold
             ):
                 continue
 

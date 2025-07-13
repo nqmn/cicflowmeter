@@ -1,0 +1,38 @@
+TCPDUMP-Style ICMP Flood PCAP Analysis Summary
+==================================================
+
+Source PCAP: examples/icmp_flood_tcpdump.pcap
+Total packets: 2206
+Total flows extracted: 7
+Features per flow: 82
+
+Flow Distribution:
+  ICMP flows: 7
+    - Echo request/reply flows: 4
+    - Error message flows: 3
+
+Sample Echo Flow:
+  Source IP: 192.168.1.100
+  Destination IP: 8.8.8.8
+  Protocol: 2048
+  Source Port: -1 (should be -1)
+  Destination Port: -1 (should be -1)
+  Forward Packets: 1001
+  Backward Packets: 1000
+  Flow Duration: 9.995
+  TCP Flags (should be -1): -1
+
+Sample Error Flow:
+  Source IP: 10.0.0.1
+  Destination IP: 192.168.1.100
+  Forward Packets: 4
+  Backward Packets: 0
+
+TCPDUMP-Style PCAP Validation:
+* CookedLinux headers properly processed
+* ICMP flood patterns detected
+* Echo request/reply pairing successful
+* ICMP error messages processed
+* Multiple source IPs handled
+* Original 82 features maintained
+* Non-applicable fields set to -1

@@ -21,12 +21,17 @@ class Flow:
             direction (Enum): The direction the packet is going ove the wire.
         """
 
-        (
-            self.src_ip,
-            self.dest_ip,
-            self.src_port,
-            self.dest_port,
-        ) = get_packet_flow_key(packet, direction)
+        flow_key = get_packet_flow_key(packet, direction)
+
+        # Handle different protocols
+        if "ICMP" in packet:
+            self.src_ip, self.dest_ip, _, _ = flow_key  # Ignore ICMP type/id for features
+            self.src_port = -1  # Not applicable for ICMP
+            self.dest_port = -1  # Not applicable for ICMP
+            self.is_icmp = True
+        else:
+            self.src_ip, self.dest_ip, self.src_port, self.dest_port = flow_key
+            self.is_icmp = False
 
         # Initialize flow properties with the first packet
         self.packets = [(packet, direction)]  # Add the first packet
@@ -144,23 +149,23 @@ class Flow:
             "bwd_iat_min": backward_iat["min"],
             "bwd_iat_mean": backward_iat["mean"],
             "bwd_iat_std": backward_iat["std"],
-            # Flags statistics
-            "fwd_psh_flags": flag_count.count("PSH", PacketDirection.FORWARD),
-            "bwd_psh_flags": flag_count.count("PSH", PacketDirection.REVERSE),
-            "fwd_urg_flags": flag_count.count("URG", PacketDirection.FORWARD),
-            "bwd_urg_flags": flag_count.count("URG", PacketDirection.REVERSE),
-            "fin_flag_cnt": flag_count.count("FIN"),
-            "syn_flag_cnt": flag_count.count("SYN"),
-            "rst_flag_cnt": flag_count.count("RST"),
-            "psh_flag_cnt": flag_count.count("PSH"),
-            "ack_flag_cnt": flag_count.count("ACK"),
-            "urg_flag_cnt": flag_count.count("URG"),
-            "ece_flag_cnt": flag_count.count("ECE"),
+            # Flags statistics (TCP-specific, set to -1 for ICMP)
+            "fwd_psh_flags": -1 if self.is_icmp else flag_count.count("PSH", PacketDirection.FORWARD),
+            "bwd_psh_flags": -1 if self.is_icmp else flag_count.count("PSH", PacketDirection.REVERSE),
+            "fwd_urg_flags": -1 if self.is_icmp else flag_count.count("URG", PacketDirection.FORWARD),
+            "bwd_urg_flags": -1 if self.is_icmp else flag_count.count("URG", PacketDirection.REVERSE),
+            "fin_flag_cnt": -1 if self.is_icmp else flag_count.count("FIN"),
+            "syn_flag_cnt": -1 if self.is_icmp else flag_count.count("SYN"),
+            "rst_flag_cnt": -1 if self.is_icmp else flag_count.count("RST"),
+            "psh_flag_cnt": -1 if self.is_icmp else flag_count.count("PSH"),
+            "ack_flag_cnt": -1 if self.is_icmp else flag_count.count("ACK"),
+            "urg_flag_cnt": -1 if self.is_icmp else flag_count.count("URG"),
+            "ece_flag_cnt": -1 if self.is_icmp else flag_count.count("ECE"),
             # Response Time
             "down_up_ratio": packet_count.get_down_up_ratio(),
             "pkt_size_avg": packet_length.get_avg(),
-            "init_fwd_win_byts": self.init_window_size[PacketDirection.FORWARD],
-            "init_bwd_win_byts": self.init_window_size[PacketDirection.REVERSE],
+            "init_fwd_win_byts": -1 if self.is_icmp else self.init_window_size[PacketDirection.FORWARD],
+            "init_bwd_win_byts": -1 if self.is_icmp else self.init_window_size[PacketDirection.REVERSE],
             "active_max": active_stat["max"],
             "active_min": active_stat["min"],
             "active_mean": active_stat["mean"],
@@ -185,6 +190,8 @@ class Flow:
         data["subflow_bwd_pkts"] = data["tot_bwd_pkts"]
         data["subflow_fwd_byts"] = data["totlen_fwd_pkts"]
         data["subflow_bwd_byts"] = data["totlen_bwd_pkts"]
+
+
 
         if include_fields is not None:
             data = {k: v for k, v in data.items() if k in include_fields}

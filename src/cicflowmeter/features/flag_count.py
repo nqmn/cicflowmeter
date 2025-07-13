@@ -33,6 +33,7 @@ class FlagCount:
             packets = (packet for packet, _ in self.flow.packets)
 
         for packet in packets:
-            if flag[0] in packet.sprintf("%TCP.flags%"):
+            # Only count flags for TCP packets, skip ICMP and UDP
+            if "TCP" in packet and flag[0] in packet.sprintf("%TCP.flags%"):
                 count += 1
         return count

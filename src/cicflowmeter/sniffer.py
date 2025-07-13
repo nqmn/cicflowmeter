@@ -25,14 +25,14 @@ def create_sniffer(
     if input_file:
         sniffer = AsyncSniffer(
             offline=input_file,
-            filter="ip and (tcp or udp)",
+            filter="ip and (tcp or udp or icmp)",
             prn=session.process,
             store=False,
         )
     else:
         sniffer = AsyncSniffer(
             iface=input_interface,
-            filter="ip and (tcp or udp)",
+            filter="ip and (tcp or udp or icmp)",
             prn=session.process,
             store=False,
         )

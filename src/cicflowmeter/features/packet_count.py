@@ -60,6 +60,8 @@ class PacketCount:
             return packet["TCP"].payload
         elif "UDP" in packet:
             return packet["UDP"].payload
+        elif "ICMP" in packet:
+            return packet["ICMP"].payload
         return 0
 
     def has_payload(self, packet_direction=None) -> int:

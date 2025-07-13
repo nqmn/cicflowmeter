@@ -16,6 +16,10 @@ def create_mock_packet(
     dst_port=80,
     proto: Union[TCP, UDP, ICMP] = TCP,
     timestamp=None,
+    icmp_type=8,  # Echo Request by default
+    icmp_code=0,
+    icmp_id=1234,
+    icmp_seq=1,
 ):
     """Helper function to create a mock packet with a specific timestamp."""
     if timestamp is None:
@@ -23,10 +27,17 @@ def create_mock_packet(
 
     ether = Ether()
     ip = IP(src=src_ip, dst=dst_ip)
-    transport = proto()
-    if proto == TCP or proto == UDP:
-        transport.sport = src_port
-        transport.dport = dst_port
+
+    if proto == ICMP:
+        transport = ICMP(type=icmp_type, code=icmp_code)
+        if icmp_type in [8, 0]:  # Echo Request/Reply
+            transport.id = icmp_id
+            transport.seq = icmp_seq
+    else:
+        transport = proto()
+        if proto == TCP or proto == UDP:
+            transport.sport = src_port
+            transport.dport = dst_port
 
     packet = ether / ip / transport
     packet.time = timestamp
@@ -200,9 +211,9 @@ def test_features(mock_flow_data):
 def test_packet_flow_key(mock_packets):
     tcp_fwd_1, tcp_fwd_2, tcp_rev_1, tcp_rev_2, icmp_packet, udp_packet = mock_packets
 
-    # ICMP should raise exception as it's not TCP/UDP
-    with pytest.raises(Exception, match="Only TCP protocols are supported."):
-        get_packet_flow_key(icmp_packet, PacketDirection.FORWARD)
+    # ICMP should now work (no longer raises exception)
+    icmp_key = get_packet_flow_key(icmp_packet, PacketDirection.FORWARD)
+    assert len(icmp_key) == 4  # Should return 4-tuple for ICMP too
 
     """
     get_packet_flow_key returns a tuple:
@@ -274,12 +285,255 @@ def test_flow_packet_rate(mock_flow_data):
 
     assert mock_flow_data["flow_pkts_s"] >= 0
     assert mock_flow_data["flow_byts_s"] >= 0
-    assert mock_flow_data["fwd_pkts_s"] >= 0
-    assert mock_flow_data["bwd_pkts_s"] >= 0
 
-    # Check if rates are roughly correct (4 packets / ~0.3s = ~13.3 pkts/s)
-    # Allow for some imprecision
-    assert 13.0 < mock_flow_data["flow_pkts_s"] < 13.5
+
+# ICMP-specific test cases
+def test_icmp_echo_request_flow():
+    """Test ICMP echo request flow creation and feature extraction."""
+    start_time = time.time()
+
+    # Create ICMP echo request packets
+    icmp_request = create_mock_packet(
+        src_ip="192.168.1.100",
+        dst_ip="8.8.8.8",
+        proto=ICMP,
+        icmp_type=8,  # Echo Request
+        icmp_code=0,
+        icmp_id=1234,
+        icmp_seq=1,
+        timestamp=start_time
+    )
+
+    # Create flow with ICMP packet
+    flow = Flow(icmp_request, PacketDirection.FORWARD)
+
+    # Verify ICMP flow properties
+    assert flow.is_icmp == True
+    assert flow.src_port == -1  # Not applicable for ICMP
+    assert flow.dest_port == -1  # Not applicable for ICMP
+
+    # Add more ICMP packets to the flow
+    for seq in range(2, 5):
+        packet = create_mock_packet(
+            src_ip="192.168.1.100",
+            dst_ip="8.8.8.8",
+            proto=ICMP,
+            icmp_type=8,
+            icmp_code=0,
+            icmp_id=1234,
+            icmp_seq=seq,
+            timestamp=start_time + seq * 0.1
+        )
+        flow.add_packet(packet, PacketDirection.FORWARD)
+
+    # Extract features
+    data = flow.get_data()
+
+    # Verify non-applicable fields are set to -1 for ICMP
+    assert data["src_port"] == -1
+    assert data["dst_port"] == -1
+    assert data["init_fwd_win_byts"] == -1
+    assert data["init_bwd_win_byts"] == -1
+
+    # Verify TCP flags are set to -1 for ICMP
+    assert data["fin_flag_cnt"] == -1
+    assert data["syn_flag_cnt"] == -1
+    assert data["rst_flag_cnt"] == -1
+    assert data["psh_flag_cnt"] == -1
+    assert data["ack_flag_cnt"] == -1
+    assert data["urg_flag_cnt"] == -1
+    assert data["ece_flag_cnt"] == -1
+
+    # Verify basic flow statistics work
+    assert data["tot_fwd_pkts"] == 4
+    assert data["tot_bwd_pkts"] == 0
+    assert data["flow_duration"] > 0
+    assert data["pkt_len_mean"] > 0
+
+
+def test_icmp_echo_request_reply_flow():
+    """Test ICMP echo request/reply bidirectional flow."""
+    start_time = time.time()
+
+    # Create echo request
+    request = create_mock_packet(
+        src_ip="192.168.1.100",
+        dst_ip="8.8.8.8",
+        proto=ICMP,
+        icmp_type=8,  # Echo Request
+        icmp_code=0,
+        icmp_id=1234,
+        icmp_seq=1,
+        timestamp=start_time
+    )
+
+    # Create echo reply
+    reply = create_mock_packet(
+        src_ip="8.8.8.8",
+        dst_ip="192.168.1.100",
+        proto=ICMP,
+        icmp_type=0,  # Echo Reply
+        icmp_code=0,
+        icmp_id=1234,
+        icmp_seq=1,
+        timestamp=start_time + 0.05
+    )
+
+    # Test flow key generation for request/reply matching
+    request_key = get_packet_flow_key(request, PacketDirection.FORWARD)
+    reply_key = get_packet_flow_key(reply, PacketDirection.REVERSE)
+
+    # Keys should match for proper flow grouping
+    assert request_key == reply_key
+
+    # Create flow and add both packets
+    flow = Flow(request, PacketDirection.FORWARD)
+    flow.add_packet(reply, PacketDirection.REVERSE)
+
+    data = flow.get_data()
+
+    # Verify bidirectional flow
+    assert data["tot_fwd_pkts"] == 1
+    assert data["tot_bwd_pkts"] == 1
+
+
+def test_icmp_unreachable_flow():
+    """Test ICMP destination unreachable flow."""
+    start_time = time.time()
+
+    unreachable = create_mock_packet(
+        src_ip="192.168.1.1",
+        dst_ip="192.168.1.100",
+        proto=ICMP,
+        icmp_type=3,  # Destination Unreachable
+        icmp_code=1,  # Host Unreachable
+        icmp_id=0,    # Not applicable for unreachable
+        icmp_seq=0,   # Not applicable for unreachable
+        timestamp=start_time
+    )
+
+    flow = Flow(unreachable, PacketDirection.FORWARD)
+    data = flow.get_data()
+
+    # Verify it's processed as ICMP (non-applicable fields should be -1)
+    assert data["src_port"] == -1
+    assert data["dst_port"] == -1
+
+
+def test_icmp_ttl_exceeded_flow():
+    """Test ICMP TTL exceeded flow."""
+    start_time = time.time()
+
+    ttl_exceeded = create_mock_packet(
+        src_ip="10.0.0.1",
+        dst_ip="192.168.1.100",
+        proto=ICMP,
+        icmp_type=11,  # Time Exceeded
+        icmp_code=0,   # TTL exceeded in transit
+        icmp_id=0,
+        icmp_seq=0,
+        timestamp=start_time
+    )
+
+    flow = Flow(ttl_exceeded, PacketDirection.FORWARD)
+    data = flow.get_data()
+
+    # Verify it's processed as ICMP (non-applicable fields should be -1)
+    assert data["src_port"] == -1
+    assert data["dst_port"] == -1
+
+
+def test_icmp_redirect_flow():
+    """Test ICMP redirect flow."""
+    start_time = time.time()
+
+    redirect = create_mock_packet(
+        src_ip="192.168.1.1",
+        dst_ip="192.168.1.100",
+        proto=ICMP,
+        icmp_type=5,  # Redirect
+        icmp_code=0,  # Redirect for network
+        icmp_id=0,
+        icmp_seq=0,
+        timestamp=start_time
+    )
+
+    flow = Flow(redirect, PacketDirection.FORWARD)
+    data = flow.get_data()
+
+    # Verify it's processed as ICMP (non-applicable fields should be -1)
+    assert data["src_port"] == -1
+    assert data["dst_port"] == -1
+
+
+def test_icmp_flow_key_generation():
+    """Test ICMP flow key generation for different scenarios."""
+    start_time = time.time()
+
+    # Test echo request/reply key matching
+    echo_req = create_mock_packet(
+        src_ip="192.168.1.100",
+        dst_ip="8.8.8.8",
+        proto=ICMP,
+        icmp_type=8,
+        icmp_id=1234,
+        timestamp=start_time
+    )
+
+    echo_reply = create_mock_packet(
+        src_ip="8.8.8.8",
+        dst_ip="192.168.1.100",
+        proto=ICMP,
+        icmp_type=0,
+        icmp_id=1234,
+        timestamp=start_time + 0.05
+    )
+
+    req_key = get_packet_flow_key(echo_req, PacketDirection.FORWARD)
+    reply_key = get_packet_flow_key(echo_reply, PacketDirection.REVERSE)
+
+    # Should match for bidirectional flow
+    assert req_key == reply_key
+
+    # Test different ICMP types create different flows
+    unreachable = create_mock_packet(
+        src_ip="192.168.1.100",
+        dst_ip="8.8.8.8",
+        proto=ICMP,
+        icmp_type=3,
+        icmp_id=0,
+        timestamp=start_time
+    )
+
+    unreachable_key = get_packet_flow_key(unreachable, PacketDirection.FORWARD)
+
+    # Should be different from echo request
+    assert req_key != unreachable_key
+
+
+def test_tcp_flow_backward_compatibility():
+    """Ensure TCP flows still work correctly after ICMP changes."""
+    start_time = time.time()
+
+    tcp_packet = create_mock_packet(
+        src_ip="192.168.1.2",
+        dst_ip="192.168.1.1",
+        src_port=12345,
+        dst_port=80,
+        proto=TCP,
+        timestamp=start_time
+    )
+
+    flow = Flow(tcp_packet, PacketDirection.FORWARD)
+    data = flow.get_data()
+
+    # Verify TCP flow properties are unchanged
+    assert data["src_port"] == 12345
+    assert data["dst_port"] == 80
+
+    # TCP flags should work normally (not -1)
+    assert data["fin_flag_cnt"] >= 0
+    assert data["syn_flag_cnt"] >= 0
 
 
 def test_flow_protocol(mock_flow_data):

@@ -1,0 +1,30 @@
+CICFlowMeter with ICMP Support - Analysis Summary
+==================================================
+
+Total Flows: 4
+Features per Flow: 82
+
+Flow Distribution by Protocol:
+  ICMP Flows: 4
+  TCP Flows: 0
+  UDP Flows: 0
+
+ICMP Flow Details:
+  Unique Source IPs: 2
+  Unique Destination IPs: 2
+  Top Source IPs: [('10.0.0.1', 3), ('192.168.1.100', 1)]
+  Top Destination IPs: [('192.168.1.100', 3), ('8.8.8.8', 1)]
+
+Flow Statistics:
+  Average Duration: 0.475000 seconds
+  Maximum Duration: 1.000000 seconds
+  Average Packets per Flow: 4.75
+  Maximum Packets per Flow: 11
+  Average Bytes per Flow: 199.50
+  Maximum Bytes per Flow: 462
+
+ICMP Support Validation:
+* ICMP packets successfully processed
+* Original 82 features maintained
+* Non-applicable fields set to -1 for ICMP flows
+* Backward compatibility with TCP/UDP preserved
