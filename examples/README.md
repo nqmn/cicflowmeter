@@ -133,7 +133,13 @@ src_ip,dst_ip,src_port,dst_port,protocol,tot_fwd_pkts,tot_bwd_pkts,flow_duration
 
 ## How to Reproduce
 
-1. **Process PCAP files**:
+1. **Check version and get help**:
+   ```bash
+   cicflowmeter --version
+   cicflowmeter --help
+   ```
+
+2. **Process PCAP files**:
    ```bash
    cicflowmeter -f examples/mixed_traffic.pcap -c examples/mixed_traffic_flows.csv
    cicflowmeter -f examples/icmp_only.pcap -c examples/icmp_only_flows.csv
@@ -141,7 +147,7 @@ src_ip,dst_ip,src_port,dst_port,protocol,tot_fwd_pkts,tot_bwd_pkts,flow_duration
    cicflowmeter -f examples/icmp_flood_tcpdump.pcap -c examples/icmp_flood_tcpdump_flows.csv
    ```
 
-2. **Generate new test files**:
+3. **Generate new test files**:
    ```bash
    python create_example_pcap.py
    python process_examples.py

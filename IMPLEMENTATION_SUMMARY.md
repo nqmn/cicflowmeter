@@ -131,8 +131,15 @@ Successfully implemented comprehensive ICMP support in CICFlowMeter while mainta
 
 ## Usage Examples
 
-### Command Line (unchanged)
+### Command Line (enhanced with version support)
 ```bash
+# Check version
+cicflowmeter --version
+
+# Get help
+cicflowmeter --help
+
+# Process PCAP file
 cicflowmeter -f example.pcap -c flows.csv
 ```
 

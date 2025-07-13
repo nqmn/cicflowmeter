@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.2-ma] - 2025-07-13
+### Added
+- **Version Command**: Added `--version` command line option to display version information
+- **Enhanced Help**: Improved command line help with detailed descriptions, examples, and better formatting
+- **Program Description**: Added comprehensive program description and usage examples in help text
+
+### Enhanced
+- **Argument Parser**: Enhanced argument parser with better metavar names and detailed help descriptions
+- **User Experience**: Improved command line interface with clearer option descriptions and examples
+
 ## [0.4.2] - 2025-07-13
 ### Added
 - **ICMP Support**: Comprehensive ICMP (Internet Control Message Protocol) traffic extraction and flow analysis

@@ -34,9 +34,15 @@ For ICMP flows, the following fields are set to -1 to indicate they are not appl
 ## Usage
 
 ### Command Line
-The usage remains exactly the same as before:
+The usage remains exactly the same as before, with new version and help options:
 
 ```bash
+# Check version
+cicflowmeter --version
+
+# Get detailed help
+cicflowmeter --help
+
 # Process PCAP file with ICMP support
 cicflowmeter -f example.pcap -c flows.csv
 

@@ -20,9 +20,11 @@
 
 ---
 
-## ⚡️ Version 0.4.1
+## ⚡️ Version 0.4.2-ma
 
 - **NEW**: Enhanced with ICMP support while maintaining the original 82 features for full compatibility.
+- **NEW**: Added `--version` command line option to display version information.
+- **ENHANCED**: Improved command line help with better descriptions and examples.
 
 ---
 
@@ -63,24 +65,42 @@ pip install git+https://github.com/nqmn/cicflowmeter.git
 ### Command Line Interface
 
 ```bash
-usage: cicflowmeter [-h] (-i INPUT_INTERFACE | -f INPUT_FILE) (-c | -u) [--fields FIELDS] [-v] output
+usage: cicflowmeter [-h] [--version] (-i INTERFACE | -f FILE) (-c | -u) [--fields FIELD_LIST] [-v] OUTPUT
+
+CICFlowMeter Python Implementation - Network traffic flow analysis tool with support for TCP, UDP, and ICMP protocols
 
 positional arguments:
-  output                output file name (in csv mode) or url (in url mode)
+  OUTPUT                output file name (in CSV mode) or URL (in URL mode)
 
 options:
   -h, --help            show this help message and exit
-  -i INPUT_INTERFACE, --interface INPUT_INTERFACE
-                        capture online data from INPUT_INTERFACE
-  -f INPUT_FILE, --file INPUT_FILE
-                        capture offline data from INPUT_FILE
-  -c, --csv             output flows as csv
-  -u, --url             output flows as request to url
-  --fields FIELDS       comma separated fields to include in output (default: all)
-  -v, --verbose         more verbose
+  --version             show program's version number and exit
+  -i INTERFACE, --interface INTERFACE
+                        capture online data from network interface (e.g., eth0, wlan0)
+  -f FILE, --file FILE  capture offline data from PCAP file
+  -c, --csv             output flows as CSV format
+  -u, --url             output flows as HTTP POST requests to URL
+  --fields FIELD_LIST   comma-separated list of fields to include in output (default: all 82 features)
+  -v, --verbose         enable verbose output for debugging and packet processing details
+
+Examples:
+  cicflowmeter -f example.pcap -c flows.csv
+  cicflowmeter -i eth0 -c flows.csv -v
+  cicflowmeter -f traffic.pcap -u http://localhost:8080/flows
+  cicflowmeter -f data.pcap -c output.csv --fields src_ip,dst_ip,protocol
 ```
 
 ### Basic Examples
+
+**Check version:**
+```bash
+cicflowmeter --version
+```
+
+**Get help:**
+```bash
+cicflowmeter --help
+```
 
 **Process PCAP file with ICMP support:**
 ```bash
