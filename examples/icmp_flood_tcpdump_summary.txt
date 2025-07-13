@@ -14,7 +14,7 @@ Flow Distribution:
 Sample Echo Flow:
   Source IP: 192.168.1.100
   Destination IP: 8.8.8.8
-  Protocol: 2048
+  Protocol: 1
   Source Port: -1 (should be -1)
   Destination Port: -1 (should be -1)
   Forward Packets: 1001

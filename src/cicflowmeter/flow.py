@@ -38,7 +38,8 @@ class Flow:
         self.flow_interarrival_time = []
         self.start_timestamp = packet.time
         self.latest_timestamp = packet.time  # Initialize latest_timestamp too
-        self.protocol = packet.proto
+        # Get the IP protocol number (1=ICMP, 6=TCP, 17=UDP) instead of Ethernet type
+        self.protocol = packet["IP"].proto
 
         # Initialize window sizes
         self.init_window_size = {PacketDirection.FORWARD: 0, PacketDirection.REVERSE: 0}
