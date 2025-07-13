@@ -6,12 +6,12 @@
 
 ## 🚀 **New in This Fork: ICMP Support**
 
-✅ **ICMP Traffic Extraction** - Now supports ICMP packets alongside TCP/UDP
-✅ **Original 82 Features Maintained** - No additional fields, perfect compatibility
-✅ **3-tuple Flow Identification** - Uses `(src_ip, dst_ip, icmp_type)` for ICMP flows
-✅ **Echo Request/Reply Pairing** - Automatically groups ping traffic as bidirectional flows
-✅ **Protocol-Specific Timeouts** - Optimized 60s timeout for ICMP vs 240s for TCP/UDP
-✅ **Backward Compatible** - Existing TCP/UDP functionality unchanged
+- ✅ **ICMP Traffic Extraction** - Now supports ICMP packets alongside TCP/UDP
+- ✅ **Original 82 Features Maintained** - No additional fields, perfect compatibility
+- ✅ **3-tuple Flow Identification** - Uses `(src_ip, dst_ip, icmp_type)` for ICMP flows
+- ✅ **Echo Request/Reply Pairing** - Automatically groups ping traffic as bidirectional flows
+- ✅ **Protocol-Specific Timeouts** - Optimized 60s timeout for ICMP vs 240s for TCP/UDP
+- ✅ **Backward Compatible** - Existing TCP/UDP functionality unchanged
 
 ### Supported Traffic Types
 - **TCP flows** - Full original functionality preserved
@@ -173,10 +173,10 @@ See the `examples/` directory for:
 ## Contributing
 
 Contributions are welcome! Please ensure:
-- Backward compatibility is maintained
-- All tests pass
-- New features include comprehensive tests
-- Documentation is updated
+1. Backward compatibility is maintained
+2. All tests pass
+3. New features include comprehensive tests
+4. Documentation is updated
 
 ## License
 
