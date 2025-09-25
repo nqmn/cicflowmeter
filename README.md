@@ -145,6 +145,64 @@ sniffer.start()
 sniffer.join()
 ```
 
+## Complete Feature Set (82 Features)
+
+This tool extracts the standard 82 CICFlowMeter features for comprehensive network flow analysis:
+
+### Basic Flow Information (5 features)
+- `src_ip`, `dst_ip` - Source and destination IP addresses
+- `src_port`, `dst_port` - Source and destination ports (-1 for ICMP)
+- `protocol` - IP protocol number (1=ICMP, 6=TCP, 17=UDP)
+
+### Time-based Features (6 features)
+- `timestamp` - Flow start timestamp
+- `flow_duration` - Total flow duration
+- `flow_byts_s`, `flow_pkts_s` - Flow bytes/packets per second
+- `fwd_pkts_s`, `bwd_pkts_s` - Forward/backward packets per second
+
+### Packet Statistics (8 features)
+- `tot_fwd_pkts`, `tot_bwd_pkts` - Total forward/backward packets
+- `totlen_fwd_pkts`, `totlen_bwd_pkts` - Total length forward/backward packets
+- `fwd_act_data_pkts` - Forward packets with payload
+- `pkt_size_avg` - Average packet size
+- `fwd_seg_size_min` - Forward segment size minimum
+- `down_up_ratio` - Download/upload ratio
+
+### Packet Length Statistics (13 features)
+- **Forward**: `fwd_pkt_len_max/min/mean/std`
+- **Backward**: `bwd_pkt_len_max/min/mean/std`
+- **Overall**: `pkt_len_max/min/mean/std/var`
+
+### Header Information (2 features)
+- `fwd_header_len`, `bwd_header_len` - Forward/backward header lengths
+
+### Inter-Arrival Time Statistics (15 features)
+- **Flow IAT**: `flow_iat_mean/max/min/std`
+- **Forward IAT**: `fwd_iat_tot/max/min/mean/std`
+- **Backward IAT**: `bwd_iat_tot/max/min/mean/std`
+
+### TCP Flag Counts (11 features)
+- **Directional**: `fwd_psh_flags`, `bwd_psh_flags`, `fwd_urg_flags`, `bwd_urg_flags`
+- **Total**: `fin_flag_cnt`, `syn_flag_cnt`, `rst_flag_cnt`, `psh_flag_cnt`, `ack_flag_cnt`, `urg_flag_cnt`, `ece_flag_cnt`
+- *Note: All TCP flags set to -1 for ICMP flows*
+
+### Window Size Features (2 features)
+- `init_fwd_win_byts`, `init_bwd_win_byts` - Initial window bytes (-1 for ICMP)
+
+### Active/Idle Time Statistics (8 features)
+- **Active**: `active_max/min/mean/std`
+- **Idle**: `idle_max/min/mean/std`
+
+### Bulk Transfer Statistics (6 features)
+- `fwd_byts_b_avg`, `fwd_pkts_b_avg` - Forward bulk averages
+- `bwd_byts_b_avg`, `bwd_pkts_b_avg` - Backward bulk averages
+- `fwd_blk_rate_avg`, `bwd_blk_rate_avg` - Bulk rate averages
+
+### Additional Features (6 features)
+- `fwd_seg_size_avg`, `bwd_seg_size_avg` - Segment size averages
+- `cwr_flag_count` - CWR flag count
+- `subflow_fwd_pkts/byts`, `subflow_bwd_pkts/byts` - Subflow statistics
+
 ## ICMP Support Details
 
 ### Supported ICMP Types
