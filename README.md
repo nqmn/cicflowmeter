@@ -48,6 +48,10 @@ pip install --upgrade pip
 
 # Install using pyproject.toml (if supported)
 pip install .
+
+# Install using pyproject.toml (if supported) sudo --break-system-package
+sudo pip install . --break-system-package
+
 ```
 
 ### Option 2: Direct Installation
